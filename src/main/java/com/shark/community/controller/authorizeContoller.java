@@ -1,18 +1,21 @@
 package com.shark.community.controller;
 
+
+import com.shark.community.mapper.userMapper;
 import com.shark.community.dto.accessTokenDto;
 import com.shark.community.dto.githubUser;
+import com.shark.community.model.user;
 import com.shark.community.provider.githubProvide;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
+import java.util.UUID;
 
 @Controller
 
@@ -27,6 +30,11 @@ public class authorizeContoller {
     private String clientSecret;
     @Value("${github.redirect.url}")
     private String redirectURL;
+
+ /*   @Autowired
+    private JdbcTemplate jdbcTemplate;*/
+    @Autowired
+    private userMapper userMapper;
 
 
 
@@ -43,12 +51,26 @@ public class authorizeContoller {
 
         String accessToken = githubProvide.getAccessToken(accessTokenDto);
 
-        githubUser user=githubProvide.getUser(accessToken);
-        System.out.println(user.getName());
-        if(user!=null){
+
+        githubUser githubUser=githubProvide.getUser(accessToken);
+
+        if(githubUser!=null){
             //登陆成功
             System.out.println("登陆成功");
-            request.getSession().setAttribute("user",user);
+            user user1 = new user();
+
+            user1.setToken(UUID.randomUUID().toString());
+            user1.setName(githubUser.getName());
+            user1.setAccountId(String.valueOf(githubUser.getId()));
+            user1.setGmtCreate(System.currentTimeMillis());
+            user1.setGmtModified(user1.getGmtCreate());
+            System.out.println(user1.getName());
+
+            String sql = "insert into user (name,account_id) value (?,?)";
+            Object[] arg={user1.getName(),user1.getAccountId()};
+            userMapper.insert(user1);
+
+            request.getSession().setAttribute("user",githubUser);
             return "redirect:/";
         }else{
             //登陆失败
