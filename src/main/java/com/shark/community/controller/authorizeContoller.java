@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 
 @Controller
@@ -31,7 +32,7 @@ public class authorizeContoller {
 
     @GetMapping("/callback")
     public String callback(@RequestParam(name="code")String code,
-                           @RequestParam(name="state")String state) throws IOException {
+                           @RequestParam(name="state")String state,HttpServletRequest request) throws IOException {
 
         accessTokenDto accessTokenDto = new accessTokenDto();
         accessTokenDto.setClient_id(clientId);
@@ -44,8 +45,15 @@ public class authorizeContoller {
 
         githubUser user=githubProvide.getUser(accessToken);
         System.out.println(user.getName());
-
-        return "index";
+        if(user!=null){
+            //登陆成功
+            System.out.println("登陆成功");
+            request.getSession().setAttribute("user",user);
+            return "redirect:/";
+        }else{
+            //登陆失败
+            return "redirect:/";
+        }
     }
 
 
